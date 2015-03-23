@@ -63,7 +63,7 @@ object Authenticate {
       } else if(!tokenInfo.getIssuedTo.equals(clientId)) {
         play.Logger.error(s"client_id doesn't match expected client_id")
         revokeUser(accessToken, TokenClientMismatchError("Something went wrong, please try again later."))
-      } else if(!tokenInfo.getEmail.endsWith(domain)) {
+      } else if(!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
         play.Logger.error(s"domain doesn't match expected domain")
         revokeUser(accessToken, TokenDomainMismatchError("Something went wrong, please try again later."))
       } else {

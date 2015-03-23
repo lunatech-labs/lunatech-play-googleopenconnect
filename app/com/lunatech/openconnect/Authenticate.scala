@@ -33,18 +33,17 @@ object Authenticate {
 
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
-  def authenticateToken(authorizationToken: String, idToken: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
+  def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
 
-    val clientId: String = Play.configuration.getString(GOOGLE_CLIENTID).get
-    val secret: String = Play.configuration.getString(GOOGLE_SECRET).get
-    val domain: String = Play.configuration.getString(GOOGLE_DOMAIN).get
+    val gPlusId: String = id_token
 
-    val jsonFactory: JacksonFactory = new JacksonFactory()
-    val transport: NetHttpTransport = new NetHttpTransport()
+    val clientId: String = Play.configuration.getString("google.clientId").get
+    val secret: String = Play.configuration.getString("google.secret").get
+    val domain: String = Play.configuration.getString("google.domain").get
 
     try {
       val tokenResponse: GoogleTokenResponse = new GoogleAuthorizationCodeTokenRequest(
-        new NetHttpTransport(), new JacksonFactory(), clientId, secret, authorizationToken, "postmessage"
+        new NetHttpTransport(), new JacksonFactory(), clientId, secret, code, "postmessage"
       ).execute()
 
       val credential: GoogleCredential = new GoogleCredential.Builder()
@@ -53,27 +52,21 @@ object Authenticate {
         .setClientSecrets(clientId, secret).build()
         .setFromTokenResponse(tokenResponse)
 
-      val oauth2: Oauth2 = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).build()
+      val oauth2: Oauth2 = new Oauth2.Builder(
+        new NetHttpTransport(), new JacksonFactory, credential).build()
 
       val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
 
       if(tokenInfo.containsKey("error")) {
         play.Logger.error(s"Authorizationtoken has been denied by Google")
         revokeUser(accessToken, AuthenticationServiceError("Unable to authorize account, please try again later."))
-      }
-      else if(!tokenInfo.getUserId.equals(idToken)) {
-        play.Logger.error(s"id_token for user doesn't match")
-        revokeUser(accessToken, TokenUserMismatchError("Wrong user, please try a different user."))
-      }
-      else if(!tokenInfo.getIssuedTo.equals(clientId)) {
+      } else if(!tokenInfo.getIssuedTo.equals(clientId)) {
         play.Logger.error(s"client_id doesn't match expected client_id")
         revokeUser(accessToken, TokenClientMismatchError("Something went wrong, please try again later."))
-      }
-      else if(!tokenInfo.getEmail.endsWith(domain)) {
+      } else if(!tokenInfo.getEmail.endsWith(domain)) {
         play.Logger.error(s"domain doesn't match expected domain")
         revokeUser(accessToken, TokenDomainMismatchError("Something went wrong, please try again later."))
-      }
-      else {
+      } else {
         Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString())))
       }
     } catch {
@@ -98,8 +91,8 @@ object Authenticate {
           Right(reason)
         }
         case _ => {
-            play.Logger.info("ERROR revoking user access")
-            Right(UserRevokeError("Something went wrong, please try again later."))
+          play.Logger.info("ERROR revoking user access")
+          Right(UserRevokeError("Something went wrong, please try again later."))
         }
       }
     }

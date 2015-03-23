@@ -33,27 +33,33 @@ object Authenticate {
 
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
+  /**
+   * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
+   * Returns authentication email and token parameters if succesful, otherwise revokes user-granted permissions and returns an error.
+   */
   def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
-
-    val gPlusId: String = id_token
 
     val clientId: String = Play.configuration.getString("google.clientId").get
     val secret: String = Play.configuration.getString("google.secret").get
     val domain: String = Play.configuration.getString("google.domain").get
 
     try {
+
+      val transport: NetHttpTransport = new NetHttpTransport()
+      val jsonFactory: JacksonFactory = new JacksonFactory()
+
       val tokenResponse: GoogleTokenResponse = new GoogleAuthorizationCodeTokenRequest(
-        new NetHttpTransport(), new JacksonFactory(), clientId, secret, code, "postmessage"
+        transport, jsonFactory, clientId, secret, code, "postmessage"
       ).execute()
 
       val credential: GoogleCredential = new GoogleCredential.Builder()
-        .setJsonFactory(new JacksonFactory())
-        .setTransport(new NetHttpTransport())
+        .setJsonFactory(jsonFactory)
+        .setTransport(transport)
         .setClientSecrets(clientId, secret).build()
         .setFromTokenResponse(tokenResponse)
 
       val oauth2: Oauth2 = new Oauth2.Builder(
-        new NetHttpTransport(), new JacksonFactory, credential).build()
+        transport, jsonFactory, credential).build()
 
       val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
 

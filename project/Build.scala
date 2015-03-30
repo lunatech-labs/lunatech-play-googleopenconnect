@@ -4,7 +4,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appName         = "googleopenconnect"
+  val appName         = "play-googleopenconnect"
   val appVersion      = "1.0"
 
   val appDependencies = Seq(

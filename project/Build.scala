@@ -4,7 +4,7 @@ import sbt.Keys._
 object ApplicationBuild extends Build {
 
   val appName = "play-googleopenconnect"
-  val appVersion = "1.0"
+  val appVersion = "1.1"
 
   val appDependencies = Seq(
     "com.google.api-client" % "google-api-client" % "1.19.0",

@@ -31,17 +31,23 @@ object Authenticate {
   val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
   val REVOKE_ENDPOINT = "revocation_endpoint"
 
+  val ERROR_GENERIC: String = "Something went wrong, please try again later"
+
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
   /**
    * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
-   * Returns authentication email and token parameters if succesful, otherwise revokes user-granted permissions and returns an error.
+   * Returns authentication email and token parameters if successful, otherwise revokes user-granted permissions and returns an error.
    */
   def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
 
     val clientId: String = Play.configuration.getString("google.clientId").get
     val secret: String = Play.configuration.getString("google.secret").get
     val domain: String = Play.configuration.getString("google.domain").get
+
+    val ERROR_GOOGLE = Play.configuration.getString("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
+    val ERROR_MISMATCH_CLIENT = Play.configuration.getString("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
+    val ERROR_MISMATCH_DOMAIN = Play.configuration.getString("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
 
     try {
 
@@ -65,24 +71,24 @@ object Authenticate {
 
       if(tokenInfo.containsKey("error")) {
         play.Logger.error(s"Authorizationtoken has been denied by Google")
-        revokeUser(accessToken, AuthenticationServiceError("Unable to authorize account, please try again later."))
+        revokeUser(accessToken, AuthenticationServiceError(ERROR_GOOGLE))
       } else if(!tokenInfo.getIssuedTo.equals(clientId)) {
         play.Logger.error(s"client_id doesn't match expected client_id")
-        revokeUser(accessToken, TokenClientMismatchError("Something went wrong, please try again later."))
+        revokeUser(accessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
       } else if(!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
         play.Logger.error(s"domain doesn't match expected domain")
-        revokeUser(accessToken, TokenDomainMismatchError("Something went wrong, please try again later."))
+        revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
         Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString())))
       }
     } catch {
       case tre: TokenResponseException => {
         play.Logger.error("Unable to request authorization to Google " + tre)
-        revokeUser(accessToken, TokenResponseError("Something went wrong, please try again later."))
+        revokeUser(accessToken, TokenResponseError(ERROR_GENERIC))
       }
       case ioe: IOException => {
         play.Logger.error("Unable to request authorization to Google " + ioe)
-        revokeUser(accessToken, TokenIOError("Something went wrong, please try again later."))
+        revokeUser(accessToken, TokenIOError(ERROR_GENERIC))
       }
     }
   }
@@ -98,7 +104,7 @@ object Authenticate {
         }
         case _ => {
           play.Logger.info("ERROR revoking user access")
-          Right(UserRevokeError("Something went wrong, please try again later."))
+          Right(UserRevokeError(ERROR_GENERIC))
         }
       }
     }

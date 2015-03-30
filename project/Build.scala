@@ -1,11 +1,10 @@
 import sbt._
-import Keys._
-import play.Project._
+import sbt.Keys._
 
 object ApplicationBuild extends Build {
 
-  val appName         = "play-googleopenconnect"
-  val appVersion      = "1.0"
+  val appName = "play-googleopenconnect"
+  val appVersion = "1.0"
 
   val appDependencies = Seq(
     "com.google.api-client" % "google-api-client" % "1.19.0",
@@ -14,7 +13,12 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
-    organization := "com.lunatech"
-  )
+    organization := "com.lunatech",
 
+
+    publishTo in ThisBuild <<= version { (v: String) =>
+      val path = if (v.trim.endsWith("SNAPSHOT")) "snapshots-public" else "releases-public"
+      Some(Resolver.url("Lunatech Artifactory", new URL("http://artifactory.lunatech.com/artifactory/%s/" format path)))
+    }
+  )
 }

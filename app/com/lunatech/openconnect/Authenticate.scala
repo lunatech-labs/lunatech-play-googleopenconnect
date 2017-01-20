@@ -5,24 +5,22 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import com.google.api.client.auth.oauth2.TokenResponseException
-import com.google.api.client.googleapis.auth.oauth2.{GoogleCredential, GoogleAuthorizationCodeTokenRequest, GoogleTokenResponse}
+import com.google.api.client.googleapis.auth.oauth2.{GoogleAuthorizationCodeTokenRequest, GoogleCredential, GoogleTokenResponse}
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.oauth2.Oauth2
 import com.google.api.services.oauth2.model.Tokeninfo
-
-import play.api.Play
-import play.api.libs.ws.WS
-import play.api.Play.current
-import play.libs.Json
-
+import com.google.inject.Inject
+import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.ws.WSClient
+import play.libs.Json
 import play.mvc.Http
 
 import scala.concurrent.Future
 import scala.io.Source
 
-object Authenticate {
+class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
 
   val GOOGLE_CLIENTID = "google.clientId"
   val GOOGLE_DOMAIN = "google.domain"
@@ -36,18 +34,18 @@ object Authenticate {
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
   /**
-   * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
-   * Returns authentication email and token parameters if successful, otherwise revokes user-granted permissions and returns an error.
-   */
+    * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
+    * Returns authentication email and token parameters if successful, otherwise revokes user-granted permissions and returns an error.
+    */
   def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
 
-    val clientId: String = Play.configuration.getString("google.clientId").get
-    val secret: String = Play.configuration.getString("google.secret").get
-    val domain: String = Play.configuration.getString("google.domain").get
+    val clientId: String = configuration.getString("google.clientId").get
+    val secret: String = configuration.getString("google.secret").get
+    val domain: String = configuration.getString("google.domain").get
 
-    val ERROR_GOOGLE = Play.configuration.getString("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
-    val ERROR_MISMATCH_CLIENT = Play.configuration.getString("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
-    val ERROR_MISMATCH_DOMAIN = Play.configuration.getString("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
+    val ERROR_GOOGLE = configuration.getString("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
+    val ERROR_MISMATCH_CLIENT = configuration.getString("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
+    val ERROR_MISMATCH_DOMAIN = configuration.getString("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
 
     try {
 
@@ -69,44 +67,41 @@ object Authenticate {
 
       val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
 
-      if(tokenInfo.containsKey("error")) {
+      if (tokenInfo.containsKey("error")) {
         play.Logger.error(s"Authorizationtoken has been denied by Google")
         revokeUser(accessToken, AuthenticationServiceError(ERROR_GOOGLE))
-      } else if(!tokenInfo.getIssuedTo.equals(clientId)) {
+      } else if (!tokenInfo.getIssuedTo.equals(clientId)) {
         play.Logger.error(s"client_id doesn't match expected client_id")
         revokeUser(accessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
-      } else if(!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
+      } else if (!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
         play.Logger.error(s"domain doesn't match expected domain")
         revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
-        Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString())))
+        Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString)))
       }
     } catch {
-      case tre: TokenResponseException => {
+      case tre: TokenResponseException =>
         play.Logger.error("Unable to request authorization to Google " + tre)
         revokeUser(accessToken, TokenResponseError(ERROR_GENERIC))
-      }
-      case ioe: IOException => {
+      case ioe: IOException =>
         play.Logger.error("Unable to request authorization to Google " + ioe)
         revokeUser(accessToken, TokenIOError(ERROR_GENERIC))
-      }
+    }
+  }
+
+  private def revokeUser(token: String, reason: AuthenticationError): Future[Either[Seq[(String, String)], AuthenticationError]] = {
+    wsClient.url(getRevokeEndpoint).withQueryString("token" -> token).get().map {
+      response =>
+        response.status match {
+          case Http.Status.OK =>
+            play.Logger.info("User succesfully revoked")
+            Right(reason)
+          case _ =>
+            play.Logger.info("ERROR revoking user access")
+            Right(UserRevokeError(ERROR_GENERIC))
+        }
     }
   }
 
   private def getRevokeEndpoint: String = Json.parse(Source.fromURL(GOOGLE_CONF).mkString).get(REVOKE_ENDPOINT).asText()
-
-  private def revokeUser(token: String, reason: AuthenticationError): Future[Either[Seq[(String, String)], AuthenticationError]] = {
-    WS.url(getRevokeEndpoint).withQueryString("token" -> token).get().map {
-      response => response.status match {
-        case Http.Status.OK => {
-          play.Logger.info("User succesfully revoked")
-          Right(reason)
-        }
-        case _ => {
-          play.Logger.info("ERROR revoking user access")
-          Right(UserRevokeError(ERROR_GENERIC))
-        }
-      }
-    }
-  }
 }

@@ -11,7 +11,7 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.oauth2.Oauth2
 import com.google.api.services.oauth2.model.Tokeninfo
 import com.google.inject.Inject
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import play.libs.Json
@@ -22,14 +22,10 @@ import scala.io.Source
 
 class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
 
-  val GOOGLE_CLIENTID = "google.clientId"
-  val GOOGLE_DOMAIN = "google.domain"
-  val GOOGLE_SECRET = "google.secret"
-
   val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
   val REVOKE_ENDPOINT = "revocation_endpoint"
 
-  val ERROR_GENERIC: String = "Something went wrong, please try again later"
+  val ERROR_GENERIC = "Something went wrong, please try again later"
 
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
@@ -39,9 +35,9 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
     */
   def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
 
-    val clientId: String = configuration.getString("google.clientId").get
-    val secret: String = configuration.getString("google.secret").get
-    val domain: String = configuration.getString("google.domain").get
+    val clientId = configuration.getString("google.clientId").get
+    val secret = configuration.getString("google.secret").get
+    val domain = configuration.getString("google.domain").get
 
     val ERROR_GOOGLE = configuration.getString("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
     val ERROR_MISMATCH_CLIENT = configuration.getString("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
@@ -68,23 +64,23 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
       val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
 
       if (tokenInfo.containsKey("error")) {
-        play.Logger.error(s"Authorizationtoken has been denied by Google")
+        Logger.error(s"Authorizationtoken has been denied by Google")
         revokeUser(accessToken, AuthenticationServiceError(ERROR_GOOGLE))
       } else if (!tokenInfo.getIssuedTo.equals(clientId)) {
-        play.Logger.error(s"client_id doesn't match expected client_id")
+        Logger.error(s"client_id doesn't match expected client_id")
         revokeUser(accessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
       } else if (!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
-        play.Logger.error(s"domain doesn't match expected domain")
+        Logger.error(s"domain doesn't match expected domain")
         revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
         Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString)))
       }
     } catch {
       case tre: TokenResponseException =>
-        play.Logger.error("Unable to request authorization to Google " + tre)
+        Logger.error("Unable to request authorization to Google " + tre)
         revokeUser(accessToken, TokenResponseError(ERROR_GENERIC))
       case ioe: IOException =>
-        play.Logger.error("Unable to request authorization to Google " + ioe)
+        Logger.error("Unable to request authorization to Google " + ioe)
         revokeUser(accessToken, TokenIOError(ERROR_GENERIC))
     }
   }
@@ -94,10 +90,10 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
       response =>
         response.status match {
           case Http.Status.OK =>
-            play.Logger.info("User succesfully revoked")
+            Logger.info("User succesfully revoked")
             Right(reason)
           case _ =>
-            play.Logger.info("ERROR revoking user access")
+            Logger.info("ERROR revoking user access")
             Right(UserRevokeError(ERROR_GENERIC))
         }
     }

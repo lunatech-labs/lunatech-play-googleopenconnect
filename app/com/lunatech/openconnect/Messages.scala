@@ -6,7 +6,7 @@ sealed trait AuthenticationError {
    override def toString: String = message
 }
 
-case class AuthenticationServiceError(message: String) extends AuthenticationError {}
+case class AuthenticationServiceError(message: String) extends AuthenticationError
 case class TokenUserMismatchError(message: String) extends AuthenticationError
 case class TokenClientMismatchError(message: String) extends AuthenticationError
 case class TokenDomainMismatchError(message: String) extends AuthenticationError

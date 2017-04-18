@@ -26,7 +26,9 @@ Optionally you can define some of the error messages in your application.conf. S
 
 Example
 -------
-Implement a trait which you will use for your controllers, defining methods below when a user is not authorized:
+Full code example can be found at [Github](https://github.com/lunatech-labs/lunatech-kitchen-sink)
+
+Implement a trait which you will use for your controllers, defining methods below when a user is not authenticated or authorized:
 ```
 trait Secured extends GoogleSecured {
     override def onUnauthorized(request: RequestHeader): Result = Results.Redirect(routes.Application.login())
@@ -81,8 +83,7 @@ class Authentication @Inject()(configuration: Configuration, environment: Enviro
     */
   def login = Action { implicit request =>
     if (environment.mode == Mode.Prod) {
-      val clientId: String = configuration.getString("google.clientId").get
-      Ok(views.html.login(clientId)(request.flash)).withSession("state" -> auth.generateState)
+      Ok(views.html.login(clientId)(request.flash))
     } else {
       Redirect(routes.Application.index()).withSession("email" -> "developer@lunatech.com")
     }

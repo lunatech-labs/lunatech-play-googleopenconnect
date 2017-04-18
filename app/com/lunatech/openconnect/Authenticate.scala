@@ -22,11 +22,13 @@ import scala.io.Source
 
 class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
 
-  val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
-  val REVOKE_ENDPOINT = "revocation_endpoint"
+  private val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
+  private val REVOKE_ENDPOINT = "revocation_endpoint"
+  private val ERROR_GENERIC = "Something went wrong, please try again later"
 
-  val ERROR_GENERIC = "Something went wrong, please try again later"
-
+  /**
+    * Generate state for application based on known data
+    */
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
   /**
@@ -59,7 +61,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
         .setFromTokenResponse(tokenResponse)
 
       val oauth2: Oauth2 = new Oauth2.Builder(
-        transport, jsonFactory, credential).build()
+        transport, jsonFactory, credential).setApplicationName("Lunatech Google Openconnect").build()
 
       val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
 
@@ -86,11 +88,10 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
   }
 
   private def revokeUser(token: String, reason: AuthenticationError): Future[Either[Seq[(String, String)], AuthenticationError]] = {
-    wsClient.url(getRevokeEndpoint).withQueryString("token" -> token).get().map {
-      response =>
+    wsClient.url(getRevokeEndpoint).withQueryString("token" -> token).get.map { response =>
         response.status match {
           case Http.Status.OK =>
-            Logger.info("User succesfully revoked")
+            Logger.info("User successfully revoked")
             Right(reason)
           case _ =>
             Logger.info("ERROR revoking user access")

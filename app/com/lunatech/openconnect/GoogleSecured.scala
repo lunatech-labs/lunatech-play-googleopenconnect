@@ -12,12 +12,12 @@ trait GoogleSecured {
   /**
     * Redirect to login if the user in not authorized.
     */
-  def onUnauthorized(request: RequestHeader): Result
+  def onUnauthorized(request: RequestHeader): Result =  Results.Unauthorized("you are not authenticated")
 
   /**
     * Redirect to login if the user in not authorized as admin.
     */
-  def onForbidden(request: RequestHeader): Result
+  def onForbidden(request: RequestHeader): Result = Results.Forbidden("you are not an admin!")
 
   /**
     * Async action for authenticated admin users.

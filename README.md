@@ -3,12 +3,14 @@ Play 2.5.x library for Google Open Connect
 
 This is a simple library for enabling your Play 2.5.x scala application to authenticate using Google Open Connect
 
-Application.conf configuration
+application.conf configuration
 ------------------------------
 
 # Google API
-`google.clientId=`
-`google.secret=`
+```
+google.clientId=
+google.secret=
+```
 
 # Additional configuration
 For user verification, leave blank if users can be of any domain.  
@@ -19,10 +21,12 @@ For users that are an admin for your application you can specify an array of ema
 `administrators=["developer@lunatech.com","admin@lunatech.com"]`
 
 # Custom error messages
-Optionally you can define some of the error messages in your application.conf. Setting any of these overrides the default response.  
-`errors.authorization.googleDecline=`
-`errors.authorization.clientIdMismatch=`
-`errors.authorization.domainMismatch=`
+Optionally you can define some of the error messages in your `application.conf`. Setting any of these overrides the default response.  
+```
+errors.authorization.googleDecline=
+errors.authorization.clientIdMismatch=
+errors.authorization.domainMismatch=
+```
 
 Example
 -------
@@ -39,12 +43,9 @@ trait Secured extends GoogleSecured {
 
 Optionally override given methods when for example you want to retrieve admin users from a database
 ```
-    override def IsAdmin(f: String => Request[AnyContent] => Result): EssentialAction =
-        IsAuthenticated { user =>
-            request =>
-                if(DB.isAdmin(user)) f(user)(request)
-                else onForbidden(request)
-         }
+    override def isAdmin(email: String): Boolean =
+        DB.isAdmin(email))
+    }
 ```
 
 Next use the methods in your controller
@@ -52,24 +53,20 @@ Next use the methods in your controller
 class TestController @Inject()(val configuration: Configuration,
                                val environment: Environment) extends Controller with Secured {
 
-  def adminAction = IsAdmin { implicit user =>
-    implicit request =>
-      Ok("adminAction")
+  def adminAction = adminAction { implicit request =>
+      Ok("adminAction" + request.email)
   }
 
-  def asyncAdminAction = IsAdminAsync { implicit user =>
-    implicit request =>
-      Future.successful(Ok("asyncAdminAction"))
+  def asyncAdminAction = adminAction.async { implicit request =>
+      Future.successful(Ok("asyncAdminAction" + request.email))
   }
 
-  def authenticatedAction = IsAuthenticated { implicit user =>
-    implicit request =>
-      Ok("authenticatedAction")
+  def authenticatedAction = userAction { implicit request =>
+      Ok("authenticatedAction" + request.email)
   }
 
-  def asyncAuthenticatedAction = IsAuthenticatedAsync { implicit user =>
-    implicit request =>
-      Future.successful(Ok("asyncAuthenticatedAction"))
+  def asyncAuthenticatedAction = userAction.async { implicit request =>
+      Future.successful(Ok("asyncAuthenticatedAction" + request.email))
   }
 }
 ```

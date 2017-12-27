@@ -11,16 +11,15 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.oauth2.Oauth2
 import com.google.api.services.oauth2.model.Tokeninfo
 import com.google.inject.Inject
-import play.api.{Configuration, Logger}
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
+import play.api.{Configuration, Logger}
 import play.libs.Json
 import play.mvc.Http
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
-class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
+class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(implicit ec: ExecutionContext) {
 
   private val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
   private val REVOKE_ENDPOINT = "revocation_endpoint"
@@ -37,13 +36,13 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
     */
   def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
 
-    val clientId = configuration.getString("google.clientId").get
-    val secret = configuration.getString("google.secret").get
-    val domain = configuration.getString("google.domain").get
+    val clientId = configuration.get[String]("google.clientId")
+    val secret = configuration.get[String]("google.secret")
+    val domain = configuration.get[String]("google.domain")
 
-    val ERROR_GOOGLE = configuration.getString("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
-    val ERROR_MISMATCH_CLIENT = configuration.getString("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
-    val ERROR_MISMATCH_DOMAIN = configuration.getString("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
+    val ERROR_GOOGLE = configuration.get[Option[String]]("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
+    val ERROR_MISMATCH_CLIENT = configuration.get[Option[String]]("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
+    val ERROR_MISMATCH_DOMAIN = configuration.get[Option[String]]("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
 
     try {
 
@@ -88,15 +87,15 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient) {
   }
 
   private def revokeUser(token: String, reason: AuthenticationError): Future[Either[Seq[(String, String)], AuthenticationError]] = {
-    wsClient.url(getRevokeEndpoint).withQueryString("token" -> token).get.map { response =>
-        response.status match {
-          case Http.Status.OK =>
-            Logger.info("User successfully revoked")
-            Right(reason)
-          case _ =>
-            Logger.info("ERROR revoking user access")
-            Right(UserRevokeError(ERROR_GENERIC))
-        }
+    wsClient.url(getRevokeEndpoint).addQueryStringParameters("token" -> token).get.map { response =>
+      response.status match {
+        case Http.Status.OK =>
+          Logger.info("User successfully revoked")
+          Right(reason)
+        case _ =>
+          Logger.info("ERROR revoking user access")
+          Right(UserRevokeError(ERROR_GENERIC))
+      }
     }
   }
 

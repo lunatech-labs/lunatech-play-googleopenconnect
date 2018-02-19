@@ -1,7 +1,17 @@
-Play 2.5.x library for Google Open Connect
+Play 2.6.x library for Google Open Connect
 ==========================================
 
-This is a simple library for enabling your Play 2.5.x scala application to authenticate using Google Open Connect
+This is a simple library for enabling your Play 2.6.x scala application to authenticate using Google Open Connect
+
+build.sbt
+---------
+```
+resolvers += "Lunatech Artifactory" at "http://artifactory.lunatech.com/artifactory/releases-public"
+
+libraryDependencies ++= Seq(
+  "com.lunatech" %% "play-googleopenconnect" % "2.1"
+)
+```
 
 application.conf configuration
 ------------------------------

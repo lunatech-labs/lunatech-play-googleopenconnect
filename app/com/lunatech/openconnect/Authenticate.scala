@@ -40,9 +40,9 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
     val secret = configuration.get[String]("google.secret")
     val domain = configuration.get[String]("google.domain")
 
-    val ERROR_GOOGLE = configuration.get[Option[String]]("errors.authorization.googleDecline").getOrElse("Unable to authorize account, please try again later.")
-    val ERROR_MISMATCH_CLIENT = configuration.get[Option[String]]("errors.authorization.clientIdMismatch").getOrElse(ERROR_GENERIC)
-    val ERROR_MISMATCH_DOMAIN = configuration.get[Option[String]]("errors.authorization.domainMismatch").getOrElse(s"Please use a '$domain' account.")
+    val ERROR_GOOGLE = configuration.get[String]("errors.authorization.googleDecline")
+    val ERROR_MISMATCH_CLIENT = configuration.get[String]("errors.authorization.clientIdMismatch")
+    val ERROR_MISMATCH_DOMAIN = configuration.get[String]("errors.authorization.domainMismatch")
 
     try {
 

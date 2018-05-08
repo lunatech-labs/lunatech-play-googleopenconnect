@@ -38,7 +38,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
 
     val clientId = configuration.get[String]("google.clientId")
     val secret = configuration.get[String]("google.secret")
-    val domain = configuration.get[String]("google.domain")
+    val domains = configuration.get[Seq[String]]("google.domains")
 
     val ERROR_GOOGLE = configuration.get[String]("errors.authorization.googleDecline")
     val ERROR_MISMATCH_CLIENT = configuration.get[String]("errors.authorization.clientIdMismatch")
@@ -70,8 +70,8 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
       } else if (!tokenInfo.getIssuedTo.equals(clientId)) {
         Logger.error(s"client_id doesn't match expected client_id")
         revokeUser(accessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
-      } else if (!domain.isEmpty && !tokenInfo.getEmail.endsWith(domain)) {
-        Logger.error(s"domain doesn't match expected domain")
+      } else if (domains.nonEmpty && domains.forall(domain => !tokenInfo.getEmail.endsWith(domain))) {
+        Logger.error(s"domain doesn't match one of the expected domains")
         revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
         Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString)))

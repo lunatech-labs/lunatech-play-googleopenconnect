@@ -20,6 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
 class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(implicit ec: ExecutionContext) {
+  case class AuthenticationResult(email: String, token: String)
 
   private val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
   private val REVOKE_ENDPOINT = "revocation_endpoint"
@@ -34,7 +35,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
     * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
     * Returns authentication email and token parameters if successful, otherwise revokes user-granted permissions and returns an error.
     */
-  def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[Seq[(String, String)], AuthenticationError]] = {
+  def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[AuthenticationResult, AuthenticationError]] = {
 
     val clientId = configuration.get[String]("google.clientId")
     val secret = configuration.get[String]("google.secret")
@@ -74,7 +75,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
         Logger.error(s"domain doesn't match one of the expected domains")
         revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
-        Future(Left(Seq("email" -> tokenInfo.getEmail, "token" -> tokenResponse.toString)))
+        Future(Left(AuthenticationResult(tokenInfo.getEmail, tokenResponse.toString)))
       }
     } catch {
       case tre: TokenResponseException =>
@@ -86,7 +87,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
     }
   }
 
-  private def revokeUser(token: String, reason: AuthenticationError): Future[Either[Seq[(String, String)], AuthenticationError]] = {
+  private def revokeUser(token: String, reason: AuthenticationError): Future[Either[AuthenticationResult, AuthenticationError]] = {
     wsClient.url(getRevokeEndpoint).addQueryStringParameters("token" -> token).get.map { response =>
       response.status match {
         case Http.Status.OK =>

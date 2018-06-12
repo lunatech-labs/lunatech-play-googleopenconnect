@@ -5,7 +5,7 @@ This is a simple library for enabling your Play 2.6.x scala application to authe
 
 build.sbt
 ---------
-```
+```sbt
 resolvers += "Lunatech Artifactory" at "http://artifactory.lunatech.com/artifactory/releases-public"
 
 libraryDependencies ++= Seq(
@@ -43,7 +43,7 @@ Example
 Full code example can be found at [Github](https://github.com/lunatech-labs/lunatech-kitchen-sink)
 
 Implement a trait which you will use for your controllers, defining methods below when a user is not authenticated or authorized:
-```
+```scala
 trait Secured extends GoogleSecured {
     override def onUnauthorized(request: RequestHeader): Result = Results.Redirect(routes.Application.login())
    
@@ -52,14 +52,14 @@ trait Secured extends GoogleSecured {
 ```
 
 Optionally override given methods when for example you want to retrieve admin users from a database
-```
+```scala
     override def isAdmin(email: String): Boolean =
         DB.isAdmin(email))
     }
 ```
 
 Next use the methods in your controller
-```
+```scala
 class TestController @Inject()(val configuration: Configuration,
                                val environment: Environment) extends Controller with Secured {
 
@@ -82,7 +82,7 @@ class TestController @Inject()(val configuration: Configuration,
 ```
 
 And create a controller with methods for login, authenticate and logout
-```
+```scala
 class Authentication @Inject()(configuration: Configuration, environment: Environment, auth: Authenticate) extends Controller {
 
   /**

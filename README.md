@@ -9,7 +9,7 @@ build.sbt
 resolvers += "Lunatech Artifactory" at "http://artifactory.lunatech.com/artifactory/releases-public"
 
 libraryDependencies ++= Seq(
-  "com.lunatech" %% "play-googleopenconnect" % "2.2"
+  "com.lunatech" %% "play-googleopenconnect" % "2.3.1"
 )
 ```
 

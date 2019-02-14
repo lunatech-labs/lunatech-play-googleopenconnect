@@ -6,7 +6,7 @@ This is a simple library for enabling your Play 2.6.x scala application to authe
 build.sbt
 ---------
 ```
-resolvers += "Lunatech Artifactory" at "http://artifactory.lunatech.com/artifactory/releases-public"
+resolvers += "Lunatech Artifactory" at "https://artifactory.lunatech.com/artifactory/releases-public"
 
 libraryDependencies ++= Seq(
   "com.lunatech" %% "play-googleopenconnect" % "2.3.1"

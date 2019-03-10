@@ -9,7 +9,7 @@ build.sbt
 resolvers += "Lunatech Artifactory" at "https://artifactory.lunatech.com/artifactory/releases-public"
 
 libraryDependencies ++= Seq(
-  "com.lunatech" %% "play-googleopenconnect" % "2.3.1"
+  "com.lunatech" %% "play-googleopenconnect" % "2.4.0"
 )
 ```
 
@@ -23,8 +23,8 @@ google.secret=
 ```
 
 # Additional configuration
-For user verification, leave blank if users can be of any domain.  
-`google.domain=mydomain.com`
+For user verification, leave empty if users can be of any domain.  
+`google.domains=["mydomain.com"]`
 
 # Administrators
 For users that are an admin for your application you can specify an array of emails
@@ -96,8 +96,8 @@ class Authentication @Inject()(configuration: Configuration, environment: Enviro
     }
   }
 
-  def authenticate(code: String, idToken: String, accessToken: String) = Action.async {
-    val response = auth.authenticateToken(code, idToken, accessToken)
+  def authenticate(code: String) = Action.async {
+    val response = auth.authenticateToken(code)
 
     response.map {
       case Left(parameters) => Redirect(routes.Application.index()).withSession(parameters.toArray: _*)

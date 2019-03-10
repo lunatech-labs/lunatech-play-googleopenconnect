@@ -2,7 +2,7 @@ name := "play-googleopenconnect"
 
 organization := "com.lunatech"
 
-version := "2.3.1"
+version := "2.4.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -18,5 +18,5 @@ libraryDependencies ++= Seq(
 
 publishTo in ThisBuild := version { v: String =>
   val path = if (v.trim.endsWith("SNAPSHOT")) "snapshots-public" else "releases-public"
-  Some(Resolver.url("Lunatech Artifactory", new URL("http://artifactory.lunatech.com/artifactory/%s/" format path)))
+  Some(Resolver.url("Lunatech Artifactory", new URL("https://artifactory.lunatech.com/artifactory/%s/" format path)))
 }.value

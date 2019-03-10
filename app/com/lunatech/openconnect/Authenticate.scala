@@ -20,7 +20,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
 class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(implicit ec: ExecutionContext) {
-  case class AuthenticationResult(email: String, token: String)
 
   private val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
   private val REVOKE_ENDPOINT = "revocation_endpoint"
@@ -32,10 +31,10 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
 
   /**
-    * Accepts an authResult['code'], authResult['id_token'], and authResult['access_token'] as supplied by Google.
+    * Accepts an authResult['code'] as supplied by Google.
     * Returns authentication email and token parameters if successful, otherwise revokes user-granted permissions and returns an error.
     */
-  def authenticateToken(code: String, id_token: String, accessToken: String): Future[Either[AuthenticationResult, AuthenticationError]] = {
+  def authenticateToken(code: String): Future[Either[AuthenticationResult, AuthenticationError]] = {
 
     val clientId = configuration.get[String]("google.clientId")
     val secret = configuration.get[String]("google.secret")
@@ -67,23 +66,23 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
 
       if (tokenInfo.containsKey("error")) {
         Logger.error(s"Authorizationtoken has been denied by Google")
-        revokeUser(accessToken, AuthenticationServiceError(ERROR_GOOGLE))
+        revokeUser(credential.getAccessToken, AuthenticationServiceError(ERROR_GOOGLE))
       } else if (!tokenInfo.getIssuedTo.equals(clientId)) {
         Logger.error(s"client_id doesn't match expected client_id")
-        revokeUser(accessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
+        revokeUser(credential.getAccessToken, TokenClientMismatchError(ERROR_MISMATCH_CLIENT))
       } else if (domains.nonEmpty && domains.forall(domain => !tokenInfo.getEmail.endsWith(domain))) {
         Logger.error(s"domain doesn't match one of the expected domains")
-        revokeUser(accessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
+        revokeUser(credential.getAccessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
       } else {
         Future(Left(AuthenticationResult(tokenInfo.getEmail, tokenResponse.toString)))
       }
     } catch {
       case tre: TokenResponseException =>
         Logger.error("Unable to request authorization to Google " + tre)
-        revokeUser(accessToken, TokenResponseError(ERROR_GENERIC))
+        Future(Right(TokenResponseError(ERROR_GENERIC)))
       case ioe: IOException =>
         Logger.error("Unable to request authorization to Google " + ioe)
-        revokeUser(accessToken, TokenIOError(ERROR_GENERIC))
+        Future(Right(TokenIOError(ERROR_GENERIC)))
     }
   }
 
@@ -101,4 +100,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   }
 
   private def getRevokeEndpoint: String = Json.parse(Source.fromURL(GOOGLE_CONF).mkString).get(REVOKE_ENDPOINT).asText()
+
+  case class AuthenticationResult(email: String, token: String)
+
 }

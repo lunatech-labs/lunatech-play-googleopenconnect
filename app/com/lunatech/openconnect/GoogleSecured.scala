@@ -2,12 +2,12 @@ package com.lunatech.openconnect
 
 import com.google.inject.Inject
 import play.api.mvc._
-import play.api.{Configuration, Logger}
+import play.api.{Configuration, Logging}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-trait GoogleSecured {
+trait GoogleSecured extends Logging {
   val configuration: Configuration
   val controllerComponents: ControllerComponents
 
@@ -41,7 +41,7 @@ trait GoogleSecured {
   def isAdmin(email: String): Boolean = Try {
     configuration.get[Seq[String]]("administrators").contains(email)
   }.getOrElse {
-    Logger.error("No administrators defined!!!")
+    logger.error("No administrators defined!!!")
     false
   }
 

@@ -25,10 +25,62 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   private val REVOKE_ENDPOINT = "revocation_endpoint"
   private val ERROR_GENERIC = "Something went wrong, please try again later"
 
+  private val clientId = configuration.get[String]("google.clientId")
+  private val secret = configuration.get[String]("google.secret")
+  private val domains = configuration.get[Seq[String]]("google.domains")
+
+  private val ERROR_GOOGLE = configuration.get[String]("errors.authorization.googleDecline")
+  private val ERROR_MISMATCH_CLIENT = configuration.get[String]("errors.authorization.clientIdMismatch")
+  private val ERROR_MISMATCH_DOMAIN = configuration.get[String]("errors.authorization.domainMismatch")
+
+  private val transport: NetHttpTransport = new NetHttpTransport()
+  private val jsonFactory: JacksonFactory = new JacksonFactory()
+
+
   /**
     * Generate state for application based on known data
     */
   def generateState: String = new BigInteger(130, new SecureRandom()).toString(32)
+
+  /**
+   * Verify that an access token is valid by retrieving TokenInfo.
+   * If valid, an AuthenticationResult object will be returned, otherwise the token is invalidated and an error is returned
+   * @param accessToken
+   * @return Either[AuthenticationResult, AuthenticationError]
+   */
+  def getUserFromToken(accessToken: String) :Future[Either[AuthenticationResult, AuthenticationError]] = {
+
+    try {
+      val credential: GoogleCredential = new GoogleCredential.Builder()
+        .setJsonFactory(jsonFactory)
+        .setTransport(transport)
+        .setClientSecrets(clientId, secret).build()
+        .setAccessToken(accessToken)
+
+      val oauth2: Oauth2 = new Oauth2.Builder(
+        transport, jsonFactory, credential).setApplicationName("Lunatech Google Openconnect").build()
+
+      val tokenInfo: Tokeninfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken).execute()
+
+      // allow the token to be obtained for a different client_id, since multiple apps can have different client credentials
+      if (tokenInfo.containsKey("error")) {
+        logger.error(s"Authorization has been denied by Google")
+        revokeUser(credential.getAccessToken, AuthenticationServiceError(ERROR_GOOGLE))
+      } else if (domains.nonEmpty && domains.forall(domain => !tokenInfo.getEmail.endsWith(domain))) {
+        logger.error(s"Domain doesn't match one of the expected domains")
+        revokeUser(credential.getAccessToken, TokenDomainMismatchError(ERROR_MISMATCH_DOMAIN))
+      } else {
+        Future(Left(AuthenticationResult(tokenInfo.getEmail, accessToken)))
+      }
+    } catch {
+      case tre: TokenResponseException =>
+        logger.error("Unable to request authorization to Google ", tre)
+        Future(Right(TokenResponseError(ERROR_GENERIC)))
+      case ioe: IOException =>
+        logger.error("Unable to request authorization to Google ", ioe)
+        Future(Right(TokenIOError(ERROR_GENERIC)))
+    }
+  }
 
   /**
     * Accepts an authResult['code'] as supplied by Google.
@@ -36,18 +88,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
     */
   def authenticateToken(code: String): Future[Either[AuthenticationResult, AuthenticationError]] = {
 
-    val clientId = configuration.get[String]("google.clientId")
-    val secret = configuration.get[String]("google.secret")
-    val domains = configuration.get[Seq[String]]("google.domains")
-
-    val ERROR_GOOGLE = configuration.get[String]("errors.authorization.googleDecline")
-    val ERROR_MISMATCH_CLIENT = configuration.get[String]("errors.authorization.clientIdMismatch")
-    val ERROR_MISMATCH_DOMAIN = configuration.get[String]("errors.authorization.domainMismatch")
-
     try {
-
-      val transport: NetHttpTransport = new NetHttpTransport()
-      val jsonFactory: JacksonFactory = new JacksonFactory()
 
       val tokenResponse: GoogleTokenResponse = new GoogleAuthorizationCodeTokenRequest(
         transport, jsonFactory, clientId, secret, code, "postmessage"

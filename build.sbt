@@ -2,7 +2,7 @@ name := "play-googleopenconnect"
 
 organization := "com.lunatech"
 
-version := "2.5.0"
+version := "2.6.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 

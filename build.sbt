@@ -2,13 +2,13 @@ name := "play-googleopenconnect"
 
 organization := "com.lunatech"
 
-version := "2.7.0"
+version := "2.8.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.13.7"
 
-crossScalaVersions := Seq("2.12.8", "2.13.1")
+crossScalaVersions := Seq("2.12.15", "2.13.7")
 
 libraryDependencies ++= Seq(
   ws, guice,
@@ -16,7 +16,9 @@ libraryDependencies ++= Seq(
   "com.google.apis" % "google-api-services-oauth2" % "v2-rev20190313-1.30.1"
 )
 
-publishTo in ThisBuild := version { v: String =>
+ThisBuild / versionScheme := Some("semver-spec")
+
+ThisBuild / publishTo := version { v: String =>
   val path = if (v.trim.endsWith("SNAPSHOT")) "snapshots-public" else "releases-public"
   Some(Resolver.url("Lunatech Artifactory", new URL("https://artifactory.lunatech.com/artifactory/%s/" format path)))
 }.value

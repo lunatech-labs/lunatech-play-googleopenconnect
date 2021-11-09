@@ -128,7 +128,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   }
 
   private def revokeUser(token: String, reason: AuthenticationError): Future[Either[AuthenticationResult, AuthenticationError]] = {
-    wsClient.url(getRevokeEndpoint).addQueryStringParameters("token" -> token).get.map { response =>
+    wsClient.url(getRevokeEndpoint).addQueryStringParameters("token" -> token).get().map { response =>
       response.status match {
         case Http.Status.OK =>
           logger.info("User successfully revoked")

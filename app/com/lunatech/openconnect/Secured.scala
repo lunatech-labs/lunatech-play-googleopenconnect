@@ -25,8 +25,12 @@ private[openconnect] trait Secured extends Logging {
   /**
     * Action for authenticated admin users.
     */
-  def adminAction: ActionBuilder[UserRequest, AnyContent] = userAction andThen new AdminAction(configuration)
+  def adminAction: ActionBuilder[UserRequest, AnyContent] = userAction andThen adminAction
 
+  /**
+    * Action for authenticated admin users or for email with specific email
+    */
+  def adminOrEmployeeAction(email: String): ActionBuilder[UserRequest, AnyContent] = userAction andThen adminOrEmployeeFilter(email)
 
   /**
     * Action for authenticated users.
@@ -45,11 +49,18 @@ private[openconnect] trait Secured extends Logging {
 
   class UserRequest[A](val email: String, request: Request[A]) extends WrappedRequest[A](request)
 
-  class AdminAction(configuration: Configuration)(implicit val executionContext: ExecutionContext)
-    extends ActionFilter[UserRequest] {
-
+  def adminFilter(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
+    def executionContext: ExecutionContext = ec
     def filter[A](request: UserRequest[A]): Future[Option[Result]] = Future.successful {
       if (isAdmin(request.email)) None
+      else Some(onForbidden(request))
+    }
+  }
+
+  def adminOrEmployeeFilter(employeeEmail: String)(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
+    def executionContext: ExecutionContext = ec
+    def filter[A](request: UserRequest[A]): Future[Option[Result]] = Future.successful {
+      if (isAdmin(request.email) || request.email == employeeEmail) None
       else Some(onForbidden(request))
     }
   }

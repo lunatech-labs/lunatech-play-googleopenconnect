@@ -49,7 +49,7 @@ private[openconnect] trait Secured extends Logging {
 
   class UserRequest[A](val email: String, request: Request[A]) extends WrappedRequest[A](request)
 
-  def adminFilter(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
+  protected def adminFilter(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
     def executionContext: ExecutionContext = ec
     def filter[A](request: UserRequest[A]): Future[Option[Result]] = Future.successful {
       if (isAdmin(request.email)) None
@@ -57,7 +57,7 @@ private[openconnect] trait Secured extends Logging {
     }
   }
 
-  def adminOrEmployeeFilter(employeeEmail: String)(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
+  protected def adminOrEmployeeFilter(employeeEmail: String)(implicit ec: ExecutionContext) = new ActionFilter[UserRequest] {
     def executionContext: ExecutionContext = ec
     def filter[A](request: UserRequest[A]): Future[Option[Result]] = Future.successful {
       if (isAdmin(request.email) || request.email == employeeEmail) None

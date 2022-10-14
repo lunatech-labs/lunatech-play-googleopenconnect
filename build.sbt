@@ -18,7 +18,11 @@ libraryDependencies ++= Seq(
 
 ThisBuild / versionScheme := Some("semver-spec")
 
-ThisBuild / publishTo := version { v: String =>
-  val path = if (v.trim.endsWith("SNAPSHOT")) "snapshots-public" else "releases-public"
-  Some(Resolver.url("Lunatech Artifactory", new URL("https://artifactory.lunatech.com/artifactory/%s/" format path)))
-}.value
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+githubOwner := "lunatech-labs"
+githubRepository := "lunatech-play-googleopenconnect"
+githubTokenSource := TokenSource.Or(
+  TokenSource.Environment("GITHUB_TOKEN"), // Injected during a github workflow for publishing
+  TokenSource.Environment("SHELL"),  // safe to assume this will be set in all our devs environments, usually /bin/bash, doesn't matter what it is to prevent local errors
+)

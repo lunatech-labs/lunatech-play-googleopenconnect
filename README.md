@@ -112,3 +112,12 @@ class Authentication @Inject()(configuration: Configuration, environment: Enviro
     Redirect(routes.Authentication.login()).withNewSession.flashing("success" -> "You've been logged out")
   }
 ```
+
+# Publishig
+
+To release a new package to GitHub follow these steps:
+
+1. Update the `version` variable in the build.sbt
+2. Run `sbt +publish`
+3. Update [this README file](#buildsbt)
+4. Push to master

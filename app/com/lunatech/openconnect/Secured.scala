@@ -25,7 +25,7 @@ private[openconnect] trait Secured extends Logging {
   /**
     * Action for authenticated admin users.
     */
-  def adminAction: ActionBuilder[UserRequest, AnyContent] = userAction andThen adminAction
+  def adminAction: ActionBuilder[UserRequest, AnyContent] = userAction andThen adminFilter
 
   /**
     * Action for authenticated admin users or for email with specific email

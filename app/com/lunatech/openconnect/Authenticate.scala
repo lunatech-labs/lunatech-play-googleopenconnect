@@ -19,6 +19,8 @@ import play.mvc.Http
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
+case class AuthenticationResult(email: String, token: String)
+
 class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(implicit ec: ExecutionContext) extends Logging {
 
   private val GOOGLE_CONF = "https://accounts.google.com/.well-known/openid-configuration"
@@ -141,7 +143,4 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   }
 
   private def getRevokeEndpoint: String = Json.parse(Source.fromURL(GOOGLE_CONF).mkString).get(REVOKE_ENDPOINT).asText()
-
-  case class AuthenticationResult(email: String, token: String)
-
 }

@@ -9,7 +9,7 @@ build.sbt
 resolvers += "Lunatech Artifactory" at "https://artifactory.lunatech.com/artifactory/releases-public"
 
 libraryDependencies ++= Seq(
-  "com.lunatech" %% "play-googleopenconnect" % "2.9.1"
+  "com.lunatech" %% "play-googleopenconnect" % "2.9.2"
 )
 ```
 
@@ -113,7 +113,7 @@ class Authentication @Inject()(configuration: Configuration, environment: Enviro
   }
 ```
 
-# Publishig
+# Publishing
 
 To release a new package to GitHub follow these steps:
 

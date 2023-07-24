@@ -8,7 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.13.11"
 
-crossScalaVersions := Seq("2.12.18", "2.13.11")
+crossScalaVersions := Seq("2.13.11", "3.3.0")
 
 libraryDependencies ++= Seq(
   ws, guice,
@@ -19,10 +19,3 @@ libraryDependencies ++= Seq(
 ThisBuild / versionScheme := Some("semver-spec")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
-githubOwner := "lunatech-labs"
-githubRepository := "lunatech-play-googleopenconnect"
-githubTokenSource := TokenSource.Or(
-  TokenSource.Environment("GITHUB_TOKEN"), // Injected during a github workflow for publishing
-  TokenSource.Environment("SHELL"),  // safe to assume this will be set in all our devs environments, usually /bin/bash, doesn't matter what it is to prevent local errors
-)

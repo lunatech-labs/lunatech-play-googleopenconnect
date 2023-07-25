@@ -3,13 +3,13 @@ Play 2.8.x library for Google Open Connect
 
 This is a simple library for enabling your Play Scala application to authenticate using Google Open Connect.
 
+![Maven Central](https://img.shields.io/maven-central/v/com.lunatech/play-googleopenconnect_3)
+
 build.sbt
 ---------
 ```
-resolvers += "Lunatech Artifactory" at "https://artifactory.lunatech.com/artifactory/releases-public"
-
 libraryDependencies ++= Seq(
-  "com.lunatech" %% "play-googleopenconnect" % "2.9.2"
+  "com.lunatech" %% "play-googleopenconnect" % "<latest-version>"
 )
 ```
 
@@ -117,7 +117,6 @@ class Authentication @Inject()(configuration: Configuration, environment: Enviro
 
 To release a new package to GitHub follow these steps:
 
-1. Update the `version` variable in the build.sbt
-2. Run `sbt +publish`
-3. Update [this README file](#buildsbt)
-4. Push to master
+1. Create a new tag and publish the release on GitHub [here](https://github.com/lunatech-labs/lunatech-play-googleopenconnect/releases)
+2. Then just wait for the release action to fully run. Everything should be
+   fully automated.

@@ -15,5 +15,6 @@ libraryDependencies ++= Seq(
 )
 
 ThisBuild / versionScheme := Some("semver-spec")
+ThisBuild / dynverVTagPrefix := false
 
 Global / onChangedBuildSource := ReloadOnSourceChanges

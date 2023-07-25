@@ -1,6 +1,23 @@
-name := "play-googleopenconnect"
 
-organization := "com.lunatech"
+inThisBuild(
+  List(
+    organization := "com.lunatech",
+    homepage := Some(url("https://github.com/lunatech-labs/lunatech-play-googleopenconnect/")),
+    developers := List(
+      Developer(
+        "wjglerum",
+        "Willem Jan Glerum",
+        "willem.jan.glerum@lunatech.nl",
+        url("https://github.com/wjglerum")
+      )
+    ),
+    licenses := Seq(
+      "Apache-2.0" -> url("http://www.apache.org/license/LICENSE-2.0")
+    )
+  )
+)
+
+name := "play-googleopenconnect"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 

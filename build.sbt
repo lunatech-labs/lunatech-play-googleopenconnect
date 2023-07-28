@@ -2,6 +2,8 @@
 inThisBuild(
   List(
     organization := "com.lunatech",
+    organizationName := "Lunatech",
+    organizationHomepage := Some(url("https://lunatech.com")),
     homepage := Some(url("https://github.com/lunatech-labs/lunatech-play-googleopenconnect/")),
     developers := List(
       Developer(

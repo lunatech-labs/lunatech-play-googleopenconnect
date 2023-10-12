@@ -3,7 +3,7 @@ Play 2.8.x library for Google Open Connect
 
 This is a simple library for enabling your Play Scala application to authenticate using Google Open Connect.
 
-![Maven Central](https://img.shields.io/maven-central/v/com.lunatech/play-googleopenconnect_3)
+![Maven Central](https://img.shields.io/maven-central/v/com.lunatech/play-googleopenconnect_3?link=https%3A%2F%2Fcentral.sonatype.com%2Fartifact%2Fcom.lunatech%2Fplay-googleopenconnect_3)
 
 build.sbt
 ---------

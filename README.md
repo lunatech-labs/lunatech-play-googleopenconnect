@@ -1,4 +1,4 @@
-Play 2.8.x library for Google Open Connect
+Play 2.9.x library for Google Open Connect
 ==========================================
 
 This is a simple library for enabling your Play Scala application to authenticate using Google Open Connect.

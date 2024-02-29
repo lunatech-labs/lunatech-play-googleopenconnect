@@ -29,7 +29,7 @@ crossScalaVersions := Seq("2.13.13", "3.3.1")
 
 libraryDependencies ++= Seq(
   ws, guice,
-  "com.google.api-client" % "google-api-client" % "1.30.7",
+  "com.google.api-client" % "google-api-client" % "1.35.2",
   "com.google.apis" % "google-api-services-oauth2" % "v2-rev20190313-1.30.1"
 )
 

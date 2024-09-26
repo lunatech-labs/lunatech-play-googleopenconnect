@@ -23,9 +23,9 @@ name := "play-googleopenconnect"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.13.14"
+scalaVersion := "2.13.15"
 
-crossScalaVersions := Seq("2.13.14", "3.5.1")
+crossScalaVersions := Seq("2.13.15", "3.5.1")
 
 libraryDependencies ++= Seq(
   ws, guice,

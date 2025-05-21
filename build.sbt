@@ -36,3 +36,9 @@ ThisBuild / versionScheme := Some("semver-spec")
 ThisBuild / dynverVTagPrefix := false
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+ThisBuild / publishTo := {
+  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
+}

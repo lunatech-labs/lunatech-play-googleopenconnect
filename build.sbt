@@ -1,3 +1,4 @@
+import xerial.sbt.Sonatype.sonatypeCentralHost
 
 inThisBuild(
   List(
@@ -38,5 +39,4 @@ ThisBuild / dynverVTagPrefix := false
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost

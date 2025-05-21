@@ -1,13 +1,9 @@
 package com.lunatech.openconnect
 
-import java.io.IOException
-import java.math.BigInteger
-import java.security.SecureRandom
-
 import com.google.api.client.auth.oauth2.TokenResponseException
 import com.google.api.client.googleapis.auth.oauth2.{GoogleAuthorizationCodeTokenRequest, GoogleCredential, GoogleTokenResponse}
 import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.oauth2.Oauth2
 import com.google.api.services.oauth2.model.Tokeninfo
 import com.google.inject.Inject
@@ -16,6 +12,9 @@ import play.api.{Configuration, Logging}
 import play.libs.Json
 import play.mvc.Http
 
+import java.io.IOException
+import java.math.BigInteger
+import java.security.SecureRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
@@ -36,7 +35,7 @@ class Authenticate @Inject()(configuration: Configuration, wsClient: WSClient)(i
   private val ERROR_MISMATCH_DOMAIN = configuration.get[String]("errors.authorization.domainMismatch")
 
   private val transport: NetHttpTransport = new NetHttpTransport()
-  private val jsonFactory: JacksonFactory = new JacksonFactory()
+  private val jsonFactory: GsonFactory = GsonFactory.getDefaultInstance
 
 
   /**

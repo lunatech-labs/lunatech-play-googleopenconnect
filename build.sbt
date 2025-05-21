@@ -29,7 +29,7 @@ crossScalaVersions := Seq("2.13.16", "3.7.0")
 libraryDependencies ++= Seq(
   ws, guice,
   "com.google.api-client" % "google-api-client" % "1.30.7",
-  "com.google.apis" % "google-api-services-oauth2" % "v2-rev20190313-1.30.1"
+  "com.google.apis" % "google-api-services-oauth2" % "v2-rev20200213-2.0.0"
 )
 
 ThisBuild / versionScheme := Some("semver-spec")

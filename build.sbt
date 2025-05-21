@@ -1,5 +1,3 @@
-import xerial.sbt.Sonatype.sonatypeCentralHost
-
 inThisBuild(
   List(
     organization := "com.lunatech",
@@ -38,5 +36,3 @@ ThisBuild / versionScheme := Some("semver-spec")
 ThisBuild / dynverVTagPrefix := false
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
-ThisBuild / sonatypeCredentialHost := sonatypeCentralHost

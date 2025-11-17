@@ -24,7 +24,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.13.17"
 
-crossScalaVersions := Seq("2.13.17", "3.7.3")
+crossScalaVersions := Seq("2.13.17", "3.7.4")
 
 libraryDependencies ++= Seq(
   ws, guice,
